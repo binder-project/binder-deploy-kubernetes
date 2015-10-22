@@ -1,0 +1,25 @@
+{
+  "name": "binder-deploy-kubernetes",
+  "version": "0.0.0",
+  "description": "Deploys Binder templates on a Kubernetes cluster according to the binder-deploy interface",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/binder-project/binder-deploy-kubernetes.git"
+  },
+  "author": "Andrew Osheroff",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/binder-project/binder-deploy-kubernetes/issues"
+  },
+  "dependencies": {
+    "forever-monitor": "~1.7.0",
+    "node-kubernetes-client": "~0.2.3",
+    "winston": "~1.1.1",
+    "express": "~4.13.3",
+    "request": "~2.65.0"
+  }
+}
