@@ -11,3 +11,14 @@ var kube = {
 var logging = {
   file: 'binder-deploy-kubernetes.log'
 }
+
+// Storage settings
+var storage = {
+  // storage can either be 'in-memory' on 'mongo'
+  mode: 'in-memory',
+
+  mongo: {
+    poolCollection: 'pools',
+    appCollection: 'running_apps'
+  }
+}
