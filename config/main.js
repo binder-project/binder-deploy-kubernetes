@@ -1,6 +1,3 @@
-// Top-level binder-deploy settings
-port = 8080
-
 // Kubernetes configuration options
 var kube = {
   proxyHost: 'localhost',
@@ -21,4 +18,11 @@ var storage = {
     poolCollection: 'pools',
     appCollection: 'running_apps'
   }
+}
+
+module.exports = {
+  port: 8080,
+  kube: kube,
+  storage: storage,
+  logging: logging
 }
