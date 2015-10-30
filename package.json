@@ -23,6 +23,7 @@
     "mongodb": "^2.0.47",
     "node-kubernetes-client": "^0.2.3",
     "request": "~2.65.0",
-    "winston": "~1.1.1"
+    "winston": "~1.1.1",
+    "string-format": "~0.5.0"
   }
 }
