@@ -1,7 +1,8 @@
 // Kubernetes configuration options
 var kube = {
   proxyHost: 'localhost',
-  proxyPort: 8083
+  proxyPort: 8083,
+  apiVersion: 'v1'
 }
 
 // Logging settings

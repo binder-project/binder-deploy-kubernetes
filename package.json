@@ -19,11 +19,12 @@
     "async": "^1.5.0",
     "express": "~4.13.3",
     "forever-monitor": "~1.7.0",
+    "hat": "0.0.3",
     "lodash": "^3.10.1",
     "mongodb": "^2.0.47",
     "node-kubernetes-client": "^0.2.3",
     "request": "~2.65.0",
-    "winston": "~1.1.1",
-    "string-format": "~0.5.0"
+    "string-format": "~0.5.0",
+    "winston": "~1.1.1"
   }
 }
