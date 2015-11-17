@@ -21,9 +21,15 @@ var storage = {
   }
 }
 
+// Pool settings
+var pool = {
+  size: 1
+}
+
 module.exports = {
   port: 8080,
   kube: kube,
   storage: storage,
-  logging: logging
+  logging: logging,
+  pool: pool
 }
