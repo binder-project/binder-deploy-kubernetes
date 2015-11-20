@@ -2,9 +2,10 @@
   "name": "binder-deploy-kubernetes",
   "version": "0.0.0",
   "description": "Deploys Binder templates on a Kubernetes cluster according to the binder-deploy interface",
-  "main": "index.js",
+  "main": "lib/server.js",
   "scripts": {
-    "test": "nodejs test/all.js"
+    "test": "nodejs test/all.js",
+    "start": "nodejs start.js"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,7 @@
   "dependencies": {
     "async": "^1.5.0",
     "babel": "^6.1.18",
+    "body-parser": "^1.14.1",
     "express": "~4.13.3",
     "forever-monitor": "~1.7.0",
     "hat": "0.0.3",
