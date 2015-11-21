@@ -26,10 +26,17 @@ var pool = {
   size: 1
 }
 
+// Testing settings
+var test = {
+  templateDir: 'test/templates/',
+  testing: false
+}
+
 module.exports = {
   port: 8080,
   kube: kube,
   storage: storage,
   logging: logging,
-  pool: pool
+  pool: pool,
+  test: test
 }
