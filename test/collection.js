@@ -1,6 +1,7 @@
 var _ = require('lodash')
 var assert = require('assert')
 
+var testUtil = require('./util.js')
 var Collection = require('../lib/models.js').Collection
 
 describe('Collection', function () {
@@ -11,7 +12,10 @@ describe('Collection', function () {
     obj = obj || {}
     return _.extend(obj, {
       create: good,
-      update: good,
+      update: function (update, cb) {
+        _.extend(this, update)
+        cb(null)
+      },
       delete: good
     })
   }
@@ -20,7 +24,9 @@ describe('Collection', function () {
     obj = obj || {}
     return _.extend(obj, {
       create: bad,
-      update: bad,
+      update: function (update, cb) {
+        cb(new Error('always bad'))
+      },
       delete: bad
     })
   }
@@ -118,9 +124,110 @@ describe('Collection', function () {
 
     })
 
-    it('should correctly update models')
+    describe('querying', function () {
 
-    it('should correctly find models')
+      before(function () {
+        var l = [{}, {a: 1, b: 2}, GoodModel({b: 2}), BadModel({b: 2}), GoodModel({a: 1})]
+        collection = new Collection({
+          collection: l
+        })
+      })
+
+      it('should find all items with an empty template', function (done) {
+        var template = {}
+        assert.equal(collection.length(), 5)
+        collection.find(template, function (err, items) {
+          if (err) throw err
+          assert.deepEqual(items, collection.coll)
+          done()
+        })
+      })
+
+      it('should find full items with partial templates', function (done) {
+        var template = {a: 1}
+        collection.find(template, function (err, items) {
+          if (err) throw err
+          assert.equal(items.length, 2)
+          done()
+        })
+      })
+
+      it('should return a single item for findOne', function (done) {
+        var template = {a: 1}
+        collection.findOne(template, function (err, items) {
+          if (err) throw err
+          assert(!(items instanceof Array))
+          assert.deepEqual(items, {a: 1, b: 2})
+          done()
+        })
+      })
+    })
+
+    describe('updating', function () {
+
+      before(function () {
+        var l = [GoodModel(), GoodModel({a: 1}), BadModel({b: 1}), {c: 1}]
+        collection = new Collection({
+          collection: l
+        })
+      })
+
+      it('should update if model updating succeeds', function (done) {
+        var template = {a: 1}
+        var update = {a: 4}
+        collection.findOne(template, function (err, item) {
+          if (err) throw err
+          assert(testUtil.isEqual(item, GoodModel({a: 1})))
+          collection.update(template, update, function (err) {
+            if (err) throw err
+            collection.findOne(update, function (err, item) {
+              if (err) throw err
+              console.log('item: ' + item)
+              console.log('collection: ' + JSON.stringify(collection.coll))
+              assert(testUtil.isEqual(item, GoodModel({a: 4})))
+              done()
+            })
+          })
+        })
+      })
+
+      it('should not update if model updating fails', function (done) {
+        var template = {b: 1}
+        var update = {b: 4}
+        collection.findOne(template, function (err, item) {
+          if (err) throw err
+          assert(testUtil.isEqual(item, BadModel({b: 1})))
+          collection.update(template, update, function (err) {
+            assert(err)
+            collection.findOne(template, function (err, item) {
+              if (err) throw err
+              console.log('item: ' + item)
+              assert(testUtil.isEqual(item, BadModel({b: 1})))
+              done()
+            })
+          })
+        })
+      })
+
+      it('should update if model does not require updating', function (done) {
+        var template = {c: 1}
+        var update = {c: 4}
+        collection.findOne(template, function (err, item) {
+          if (err) throw err
+          assert(testUtil.isEqual(item, {c: 1}))
+          collection.update(template, update, function (err) {
+            if (err) throw err
+            collection.findOne(update, function (err, item) {
+              if (err) throw err
+              assert(testUtil.isEqual(item, {c: 4}))
+              done()
+            })
+          })
+        })
+      })
+
+    })
+
 
     it('should return an empty list if models matching a template are not found')
 
