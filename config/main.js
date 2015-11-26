@@ -33,7 +33,7 @@ var test = {
 }
 
 module.exports = {
-  port: 8080,
+  port: 8085,
   kube: kube,
   storage: storage,
   logging: logging,
