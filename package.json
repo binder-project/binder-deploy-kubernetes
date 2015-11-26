@@ -4,7 +4,7 @@
   "description": "Deploys Binder templates on a Kubernetes cluster according to the binder-deploy interface",
   "main": "lib/server.js",
   "scripts": {
-    "test": "nodejs test/all.js",
+    "test": "mocha",
     "start": "nodejs start.js"
   },
   "repository": {
@@ -24,6 +24,8 @@
     "forever-monitor": "~1.7.0",
     "hat": "0.0.3",
     "lodash": "^3.10.1",
+    "mocha": "^2.3.4",
+    "mockery": "^1.4.0",
     "mongodb": "^2.0.47",
     "mongoose": "^4.2.6",
     "node-kubernetes-client": "^0.2.3",

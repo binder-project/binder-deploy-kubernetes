@@ -1,3 +1,4 @@
+
 // Kubernetes configuration options
 var kube = {
   proxyHost: 'localhost',
@@ -26,6 +27,12 @@ var pool = {
   size: 1
 }
 
+// Registry settings
+var registry = {
+  host: 'localhost',
+  port: 8084
+}
+
 // Testing settings
 var test = {
   templateDir: 'test/templates/',
@@ -38,5 +45,6 @@ module.exports = {
   storage: storage,
   logging: logging,
   pool: pool,
+  registry: registry,
   test: test
 }
