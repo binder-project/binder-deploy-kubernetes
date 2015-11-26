@@ -182,8 +182,6 @@ describe('Collection', function () {
             if (err) throw err
             collection.findOne(update, function (err, item) {
               if (err) throw err
-              console.log('item: ' + item)
-              console.log('collection: ' + JSON.stringify(collection.coll))
               assert(testUtil.isEqual(item, GoodModel({a: 4})))
               done()
             })
@@ -201,7 +199,6 @@ describe('Collection', function () {
             assert(err)
             collection.findOne(template, function (err, item) {
               if (err) throw err
-              console.log('item: ' + item)
               assert(testUtil.isEqual(item, BadModel({b: 1})))
               done()
             })
