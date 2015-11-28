@@ -2,9 +2,10 @@
   "name": "binder-deploy-kubernetes",
   "version": "0.0.0",
   "description": "Deploys Binder templates on a Kubernetes cluster according to the binder-deploy interface",
-  "main": "index.js",
+  "main": "lib/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha",
+    "start": "nodejs start.js"
   },
   "repository": {
     "type": "git",
@@ -16,10 +17,21 @@
     "url": "https://github.com/binder-project/binder-deploy-kubernetes/issues"
   },
   "dependencies": {
-    "forever-monitor": "~1.7.0",
-    "node-kubernetes-client": "~0.2.3",
-    "winston": "~1.1.1",
+    "async": "^1.5.0",
+    "babel": "^6.1.18",
+    "body-parser": "^1.14.1",
     "express": "~4.13.3",
-    "request": "~2.65.0"
+    "forever-monitor": "~1.7.0",
+    "hat": "0.0.3",
+    "lodash": "^3.10.1",
+    "mocha": "^2.3.4",
+    "mockery": "^1.4.0",
+    "mongodb": "^2.0.47",
+    "mongoose": "^4.2.6",
+    "node-kubernetes-client": "^0.2.3",
+    "request": "~2.65.0",
+    "string-format": "~0.5.0",
+    "url-join": "0.0.1",
+    "winston": "~1.1.1"
   }
 }
