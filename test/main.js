@@ -1,15 +1,13 @@
 var forever = require('forever-monitor')
 
+var kubeClient = require('../lib/client.js')
+
 var server = null
 
-before(function (done) {
-  console.log('starting server')
-  server = new (forever.Monitor)('start.js')
-  server.on('start', function () {
-    done()
-  })
-  server.start()
-})
+// the proxy server must be started before all else
+console.log('starting server')
+server = new (forever.Monitor)('start.js')
+server.start()
 
 after(function (done) {
   console.log('stopping server')

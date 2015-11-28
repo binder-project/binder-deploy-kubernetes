@@ -5,14 +5,16 @@ var App = require('../lib/state/app.js').App
 var RegistryClient = require('../lib/registry.js')
 var kubeClient = require('../lib/client.js')
 
-var client = kubeClient()
-client.pods.get(function (err, pods) {
-  if (err) {
-    console.log('WARNING: only doing local testing (no Kubernetes cluster available)')
-    setupTests(true)
-  } else {
-    setupTests(false)
-  }
+before(function () {
+  var client = kubeClient()
+  client.pods.get(function (err, pods) {
+    if (err) {
+      console.log('WARNING: only doing local testing (no Kubernetes cluster available)')
+      setupTests(true)
+    } else {
+      setupTests(false)
+    }
+  })
 })
 
 var setupTests = function(onlyLocal) {
