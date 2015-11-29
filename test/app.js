@@ -5,17 +5,7 @@ var App = require('../lib/state/app.js').App
 var RegistryClient = require('../lib/registry.js')
 var kubeClient = require('../lib/client.js')
 
-before(function () {
-  var client = kubeClient()
-  client.pods.get(function (err, pods) {
-    if (err) {
-      console.log('WARNING: only doing local testing (no Kubernetes cluster available)')
-      setupTests(true)
-    } else {
-      setupTests(false)
-    }
-  })
-})
+function () {
 
 var setupTests = function(onlyLocal) {
   describe('App', function () {
@@ -44,6 +34,7 @@ var setupTests = function(onlyLocal) {
     describe('(remote)', function () {
       var name = 'binder-project-example-requirements'
       var app = null
+
       var tests = {
 
         'should correctly create pods/services': function (done) {
@@ -70,15 +61,20 @@ var setupTests = function(onlyLocal) {
         }
 
       }
-      if (onlyLocal) {
-         _.map(_.keys(tests), function (name) {
-          it(name)
-         })
-      } else {
-        _.map(_.keys(tests), function (name) {
-          it(name, tests[name])
-        })
-      }
+
+      var client = kubeClient()
+      client.pods.get(function (err, pods) {
+        if (err) {
+          console.log('WARNING: only doing local testing (no Kubernetes cluster available)')
+          _.map(_.keys(tests), function (name) {
+           it(name)
+          })
+        } else {
+          _.map(_.keys(tests), function (name) {
+            it(name, tests[name])
+          })
+        }
+      })
     })
   })
 }
