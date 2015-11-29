@@ -19,15 +19,15 @@ before(function () {
 
 var setupTests = function(onlyLocal) {
   describe('App', function () {
-    describe('(local)', function () {
-      var registry = new RegistryClient({
-        templateDir: './examples/'
-      })
+    var registry = new RegistryClient({
+      templateDir: './examples/'
+    })
 
+    describe('(local)', function () {
       describe('from template', function () {
         it('should produce a valid pod specification', function (done) {
           var name = 'binder-project-example-requirements'
-          var template = registry.fetchTemplate(name, function (err, template) {
+          registry.fetchTemplate(name, function (err, template) {
             if (err) throw err
             var app = new App(template)
             var spec = app.spec()
@@ -42,15 +42,33 @@ var setupTests = function(onlyLocal) {
     })
 
     describe('(remote)', function () {
+      var name = 'binder-project-example-requirements'
+      var app = null
       var tests = {
+
         'should correctly create pods/services': function (done) {
+          registry.fetchTemplate(name, function (err, template) {
+            if (err) throw err
+            app = new App(template)
+            app.create(function (err) {
+              if (err) throw err
+              done()
+            })
+          })
         },
+
         'should register routes with the cluster proxy': function (done) {
+
         },
+
         'should do the correct cleanup once deleted': function (done) {
+
         },
+
         'should handle updates': function (done) {
+
         }
+
       }
       if (onlyLocal) {
          _.map(_.keys(tests), function (name) {
