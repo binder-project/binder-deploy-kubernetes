@@ -1,22 +1,27 @@
 var forever = require('forever-monitor')
+var wait = require('wait.for')
 
 var kubeClient = require('../lib/client.js')
 
 var server = null
+var cluster = false
 
 // the proxy server must be started before all else
-console.log('starting server')
-server = new (forever.Monitor)('start.js')
-server.start()
-
-after(function (done) {
-  console.log('stopping server')
-  server.on('stop', function () {
-    done()
-  })
-  server.stop()
-})
-
-setTimeout(function () {
+var client = kubeClient()
+function checkCluster () {
+  try {
+    wait.for(client.pods.get)
+  } catch (err) {
+    console.log('WARNING: Kubernetes cluster not available. Only doing local testing')
+    cluster = false
+  }
   run()
-}, 2000)
+}
+wait.launchFiber(checkCluster)
+
+module.exports = {
+  clusterAvailable: function () {
+    return cluster
+  },
+  server: server
+}
