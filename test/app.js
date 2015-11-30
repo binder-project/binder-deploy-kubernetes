@@ -4,7 +4,7 @@ var assert = require('assert')
 var App = require('../lib/state/app.js').App
 var RegistryClient = require('../lib/registry.js')
 
-var onlyLocal = require('./main.js').clusterAvailable
+var clusterAvailable = require('./main.js').clusterAvailable
 
 describe('App', function () {
   var registry = new RegistryClient({
