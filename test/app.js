@@ -4,6 +4,8 @@ var assert = require('assert')
 var App = require('../lib/state/app.js').App
 var RegistryClient = require('../lib/registry.js')
 
+var onlyLocal = !(require('./main.js').cluster)
+
 describe('App', function () {
   var registry = new RegistryClient({
     templateDir: './examples/'
@@ -58,14 +60,14 @@ describe('App', function () {
 
     }
 
-   if (true) {
-      _.map(_.keys(tests), function (name) {
-       it(name)
-      })
-    } else {
-      _.map(_.keys(tests), function (name) {
-        it(name, tests[name])
-      })
-    }
+   before(function () {
+     if (onlyLocal) {
+       this.skip()
+     }
+   })
+
+    _.map(_.keys(tests), function (name) {
+      it(name, tests[name])
+    })
   })
 })
