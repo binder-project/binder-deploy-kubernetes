@@ -133,7 +133,14 @@ describe('App', function () {
 
   describe('(remote)', function () {
     var name = 'binder-project-example-requirements'
+    var proxyClient = new ProxyClient({
+      namespace: namespace
+    })
+    var kubeClient = new KubeClient()
+
+    // set during testing
     var app = null
+    var location = null
 
     var tests = {
 
@@ -149,17 +156,42 @@ describe('App', function () {
       },
 
       'should register routes with the cluster proxy': function (done) {
-        
+        app.makeRoute(function (err, location) {
+          if (err) throw err
+          assert.equals(location, app._location())
+          done()
+        })
       },
 
-      'should do the correct cleanup once deleted': function (done) {
-
-      },
-
-      'should handle updates': function (done) {
-
+      'should be accessible through the proxy after route creation', function (done) {
+        var url = urljoin('http://' + proxyClient.lookupIP, location)
+        request(url, function (err, req, rsp) {
+          if (err) throw err
+          assert.notEqual(rsp.statusCode, null)
+          assert.notEqual(rsp.statusCode, 404)
+          assert.notEqual(rsp.statusCode, 503)
+          done()
+        })
       }
 
+      'should do the correct cleanup once deleted': function (done) {
+        app.delete(function (err) {
+          if (err) throw err
+          // ensure the pod has been deleted
+          kubeClient.pods.get({
+            template: app._frontendPod()
+          }, function (err, pods) {
+            if (err) throw err
+            assert.equal(pods.length, 0)
+            proxyClient.getRoutes(function (err, routes) {
+              if (err) throw err
+              assert.equals(routes.length, 0)
+              // ensure the proxy route has been removed
+              done()
+            })
+          })
+        })
+      },
     }
 
    before(function () {
