@@ -8,7 +8,8 @@ var kube = {
 
 // Logging settings
 var logging = {
-  file: 'binder-deploy-kubernetes.log'
+  file: 'binder-deploy-kubernetes.log',
+  testFile: 'binder-deploy-kubernetes-test.log'
 }
 
 // Storage settings
@@ -36,7 +37,7 @@ var registry = {
 // Testing settings
 var test = {
   templateDir: 'test/templates/',
-  testing: false
+  testing: true
 }
 
 module.exports = {

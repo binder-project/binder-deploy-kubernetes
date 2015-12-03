@@ -7,24 +7,37 @@ var App = require('../lib/state/app.js').App
 var RegistryClient = require('../lib/registry.js')
 var ProxyClient = require('../lib/proxy.js')
 
-var clusterAvailable = require('./main.js').clusterAvailable
+var clusterAvailable = require('./1-main.js').clusterAvailable
 
 var namespace = 'binder-testing'
 
+/**
+ * Remove the old testing namespace and create a new one (if a cluster is available)
+ */
 before(function initialize(done) {
+  this.timeout(10000)
   if (clusterAvailable()) {
     var client = new KubeClient()
-    client.namespaces.delete({
+    var nsTemplate = utils.makeNamespace(namespace)
+    console.log('About to delete old testing namespace, if it exists')
+    client.namespaces.changeState({
+      state: nsTemplate,
+      condition: function (namespaces) {
+        return (namespaces.length === 0) 
+      },
+      action: client.namespaces.delete
     }, function (err, ns) {
-      if (err) console.log('WARNING: ' + err + ', proceeding anyway')
-      client.namespaces.create({
-        template: utils.makeNamespace(namespace)
-      }, function (err, ns) { 
-        if (err) console.log('WARNING: ' + err + ', proceeding anyway')
-        console.log('Waiting for remote setup to complete...')
-        setTimer(function () { 
-          done()
-        }, 1000)
+      console.log('About to create testing namespace')
+      if (err) console.log('WARNING: Could not delete binder-testing namespace -- continuing')
+      client.namespaces.changeState({
+        state: nsTemplate,
+        delta: { status: { phase: 'Active' }},
+        action: client.namespaces.create
+      }, function (err, ns) {
+        console.log('After creating test namespace, err: ' + err)
+        if (err) throw err
+        console.log('Created {0} namespace...'.format(_.get(nsTemplate, 'metadata.name')))
+        done()
       })
     })
   }
@@ -32,6 +45,7 @@ before(function initialize(done) {
 
 describe('Proxy', function () {
   describe('(remote)', function () {
+
     var proxyClient = new ProxyClient({
       namespace: namespace
     })
@@ -39,9 +53,11 @@ describe('Proxy', function () {
     var tests = {
 
       'should create the proxy pods/services': function (done) {
+        this.timeout(50000)
         proxyClient.launchClusterProxy(function (err) {
+          console.log('err: ' + JSON.stringify(err))
           if (err) throw err
-          next()
+          done()
         })
       },
 
@@ -76,20 +92,23 @@ describe('Proxy', function () {
             done()
           })
         })
-      }
+      },
 
       'should be able to remove routes': function (done) {
         proxyClient.getRoutes(function (err, routes) {
           if (err) throw err
           assert.notEqual(routes.length, 0)
-          _.forEach(_.keys(routes), function (route) {
+          async.each(_.keys(routes), function (route, next) {
             proxyClient.removeProxyRoute(route, function (err) {
               if (err) throw err
+              next(null)
             })
-          })
-          proxyClient.getRoutes(function (err, routes) {
+          }, function (err) { 
             if (err) throw err
-            assert.equal(routes.length, 0)
+            proxyClient.getRoutes(function (err, routes) {
+              if (err) throw err
+              assert.equal(routes.length, 0)
+            })
           })
         })
       }
@@ -109,8 +128,13 @@ describe('Proxy', function () {
 })
 
 describe('App', function () {
-  var registry = new RegistryClient({
-    templateDir: './examples/'
+
+  var registry = null
+
+  before(function () {
+    var registry = new RegistryClient({
+      templateDir: './examples/'
+    })
   })
 
   describe('(local)', function () {
@@ -133,14 +157,19 @@ describe('App', function () {
 
   describe('(remote)', function () {
     var name = 'binder-project-example-requirements'
-    var proxyClient = new ProxyClient({
-      namespace: namespace
-    })
-    var kubeClient = new KubeClient()
+    var proxyClient = null
+    var kubeClient = null
 
     // set during testing
     var app = null
     var location = null
+
+    before(function () {
+      proxyClient = new ProxyClient({
+        namespace: namespace
+      })
+      kubeClient = new KubeClient()
+    })
 
     var tests = {
 
@@ -163,7 +192,7 @@ describe('App', function () {
         })
       },
 
-      'should be accessible through the proxy after route creation', function (done) {
+      'should be accessible through the proxy after route creation': function (done) {
         var url = urljoin('http://' + proxyClient.lookupIP, location)
         request(url, function (err, req, rsp) {
           if (err) throw err
@@ -172,7 +201,7 @@ describe('App', function () {
           assert.notEqual(rsp.statusCode, 503)
           done()
         })
-      }
+      },
 
       'should do the correct cleanup once deleted': function (done) {
         app.delete(function (err) {
@@ -191,7 +220,7 @@ describe('App', function () {
             })
           })
         })
-      },
+      }
     }
 
    before(function () {
@@ -207,6 +236,17 @@ describe('App', function () {
   })
 })
 
-describe('Pool', function () {
-
+/**
+ * Remove the testing namespace after remote testing has finished (and a cluster is available)
+ */
+after(function cleanup() {
+  if (clusterAvailable()) {
+    var ns = utils.makeNamespace('binder-testing')
+    var client = new KubeClient()
+    client.namespaces.delete({
+      template: ns
+    }, function (err, ns) {
+      if (err) console.log('WARNING: ' + err + ', proceeding anyway')
+    })
+  }
 })
