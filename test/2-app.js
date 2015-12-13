@@ -11,6 +11,7 @@ var App = require('../lib/state/app.js').App
 var RegistryClient = require('../lib/registry.js')
 var proxyClient = require('../lib/proxy.js').getInstance
 var ProxyClient = require('../lib/proxy.js').ProxyClient
+var DeployServer = require('../lib/server.js')
 
 var clusterAvailable = require('./1-main.js').clusterAvailable
 
@@ -261,13 +262,23 @@ describe('App', function () {
                 if (err) throw err
                 assert(one)
                 assert.equal(one.imageName, 'binder-project-example-requirements')
-                // ensure that the app is running on the cluster
-                kubeClient.pods.get({
-                  template: { metadata: { namespace: app.id }}
-                }, function (err, pods) {
-                  assert.equal(pods.length, 1)
-                  var pod = pods[0]
-                  assert.equal(_.get(pod, 'status.phase'), 'Running')
+                // ensure that the app is eventually running on the cluster
+                async.retry({times: 10, interval: 2000}, function (next) { 
+                  kubeClient.pods.get({
+                    template: { metadata: { namespace: app.id }}
+                  }, function (err, pods) {
+                    if (pods.length === 1) {
+                      var pod = pods[0]
+                      if (_.get(pod, 'status.phase') === 'Running') { 
+                        return next(null)
+                      }
+                      return next('pod not yet running. retrying...')
+                    } else {
+                      return next('pod not yet created. retrying...')
+                    }
+                  })
+                }, function (err) {
+                  if (err) throw err
                   done()
                 })
               })
@@ -386,14 +397,100 @@ describe.skip('Pools', function () {
 })
 
 describe('Cluster', function () {
+
+  var deployServer = null
+  var baseUrl = null
+  var apiKey = null
+
+  // used during testing
+  var id = null
+
+  before(function () {
+    deployServer = new DeployServer() 
+    baseUrl = 'http://localhost:' + deployServer.port
+    apiKey = deployServer.apiKey
+    deployServer.start()
+  })
+
+  after(function () {
+    if (deployServer) {
+      // deployServer.stop()
+    }
+  })
+
   var tests = {
-    'should get all applications': function (done) {
-    },
-    'should get all applications matching a template': function (done) {
-    },
+
     'should create applications': function (done) {
+      var opts = {
+        url: urljoin(baseUrl, 'applications', 'binder-project-example-requirements'),
+        method: 'POST',
+        json: true
+      }
+      request(opts, function (err, rsp, body) {
+        if (err) throw err
+        assert.notEqual(rsp.statusCode, 403)
+        assert.notEqual(rsp.statusCode, 404)
+        assert.notEqual(rsp.statusCode, 500)
+        id = body.id
+        done()
+      })
+    },
+
+    'should get all applications matching a template': function (done) {
+      var opts = {
+        url: urljoin(baseUrl, 'applications', 'binder-project-example-requirements'),
+        headers: {
+          'Authorization': apiKey
+        }
+      }
+      request(opts, function (err, rsp) {
+        if (err) throw err
+        assert.notEqual(rsp.statusCode, 403)
+        assert.notEqual(rsp.statusCode, 404)
+        assert.notEqual(rsp.statusCode, 500)
+        done()
+      })
+    },
+
+    'should get all applications': function (done) {
+      var opts = {
+        url: urljoin(baseUrl, 'applications/'),
+        headers: {
+          'Authorization': apiKey
+        }
+      }
+      request(opts, function (err, rsp) {
+        if (err) throw err
+        assert.notEqual(rsp.statusCode, 403)
+        assert.notEqual(rsp.statusCode, 404)
+        assert.notEqual(rsp.statusCode, 500)
+        done()
+      })
     }, 
+
+    'should not get all applications if not authorized': function (done) {
+      var opts = {
+        url: urljoin(baseUrl, 'applications/'),
+      }
+      request(opts, function (err, rsp) {
+        if (err) throw err
+        assert.equal(rsp.statusCode, 403)
+        done()
+      })
+    }, 
+
+
     'should get individual applications': function (done) {
+      var opts = {
+        url: urljoin(baseUrl, 'applications', 'binder-project-example-requirements', id)
+      }
+      request(opts, function (err, rsp) {
+        if (err) throw err
+        assert.notEqual(rsp.statusCode, 403)
+        assert.notEqual(rsp.statusCode, 404)
+        assert.notEqual(rsp.statusCode, 500)
+        done()
+      })
     }
   }
   makeRemote(tests)

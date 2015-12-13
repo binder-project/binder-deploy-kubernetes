@@ -1,4 +1,5 @@
 var _ = require('lodash')
+var async = require('async')
 var assert = require('assert')
 
 var testUtil = require('./util.js')
@@ -54,7 +55,8 @@ describe('Collection', function () {
 
     describe('insertion', function () {
 
-      it('should insert if creation succeeds', function (done) {
+      it('should insert regardless of creation success', function (done) {
+        this.timeout(50000)
         var model = GoodModel()
         collection.insert(model, function (err) {
           if (err) throw err
@@ -63,11 +65,22 @@ describe('Collection', function () {
         })
       })
 
-      it('should not insert if creation fails', function (done) {
+      it('should insert then remove if creation fails', function (done) {
+        this.timeout(50000)
         var model = BadModel()
         collection.insert(model, function (err) {
-          assert(err)
-          done()
+          if (err) throw err
+          async.retry({times: 3, interval: 1000}, function (next) {
+            if (collection.length() !== 1) {
+              console.log('retrying...')
+              return next('collection has not removed BadModel yet')
+            }
+            return next(null)
+          }, function (err) {
+            if (err) throw err
+            assert.equal(collection.length(), 1)
+            done()
+          })
         })
       })
 

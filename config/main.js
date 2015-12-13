@@ -25,6 +25,7 @@ var storage = {
 
 // Pool settings
 var pool = {
+  enabled: false,
   size: 1
 }
 
