@@ -195,7 +195,15 @@ describe('App', function () {
             app = new App(template)
             app.create(function (err) {
               if (err) throw err
-              done()
+              async.retry({ times: 20, interval: 5000 }, function (next) {
+                if (app.state === 'deployed') {
+                  return next(null)
+                }
+                return next('retry')
+              }, function (err) {
+                if (err) throw err
+                done()
+              })
             })
           })
         },
@@ -443,7 +451,7 @@ describe('Cluster', function () {
           'Authorization': apiKey
         }
       }
-      request(opts, function (err, rsp) {
+      request(opts, function (err, rsp, body) {
         if (err) throw err
         assert.notEqual(rsp.statusCode, 403)
         assert.notEqual(rsp.statusCode, 404)
@@ -489,6 +497,36 @@ describe('Cluster', function () {
         assert.notEqual(rsp.statusCode, 403)
         assert.notEqual(rsp.statusCode, 404)
         assert.notEqual(rsp.statusCode, 500)
+        done()
+      })
+    },
+
+    'after creating an App, should poll until status is \'deployed\'': function (done) {
+      this.timeout(50000)
+      async.retry({ times: 20, interval: 5000 }, function (next) {
+        console.log('Retrying...')
+        var opts = {
+          url: urljoin(baseUrl, 'applications', 'binder-project-example-requirements', id),
+          json: true
+        }
+        request(opts, function (err, rsp, body) {
+          console.log('inner err: ' + err)
+          if (err) throw err
+          assert.notEqual(rsp.statusCode, 403)
+          assert.notEqual(rsp.statusCode, 404)
+          assert.notEqual(rsp.statusCode, 500)
+          console.log('body: ' + JSON.stringify(body))
+          if (body.location && (body.status === 'deployed')) { 
+            console.log('finished...')
+            return next(null)
+          } else {
+            console.log('about to retry...')
+            return next('retrying...')
+          }
+        })
+      }, function (err) {
+        console.log('err: ' + err)
+        if (err) throw err
         done()
       })
     }

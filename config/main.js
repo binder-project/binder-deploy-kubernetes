@@ -37,7 +37,7 @@ var registry = {
 
 // Testing settings
 var test = {
-  templateDir: 'test/templates/',
+  templateDir: 'examples/',
   testing: true
 }
 
