@@ -8,7 +8,8 @@ var kube = {
 
 // Logging settings
 var logging = {
-  file: 'binder-deploy-kubernetes.log'
+  file: 'binder-deploy-kubernetes.log',
+  testFile: 'binder-deploy-kubernetes-test.log'
 }
 
 // Storage settings
@@ -24,6 +25,7 @@ var storage = {
 
 // Pool settings
 var pool = {
+  enabled: false,
   size: 1
 }
 
@@ -35,12 +37,12 @@ var registry = {
 
 // Testing settings
 var test = {
-  templateDir: 'test/templates/',
-  testing: false
+  templateDir: 'examples/',
+  testing: true
 }
 
 module.exports = {
-  port: 8080,
+  port: 8085,
   kube: kube,
   storage: storage,
   logging: logging,

@@ -4,7 +4,7 @@
   "description": "Deploys Binder templates on a Kubernetes cluster according to the binder-deploy interface",
   "main": "lib/server.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --delay",
     "start": "nodejs start.js"
   },
   "repository": {
@@ -32,6 +32,7 @@
     "request": "~2.65.0",
     "string-format": "~0.5.0",
     "url-join": "0.0.1",
+    "wait.for": "^0.6.6",
     "winston": "~1.1.1"
   }
 }
