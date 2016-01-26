@@ -1,10 +1,12 @@
-var forever = require('forever-monitor')
 var wait = require('wait.for')
+var shell = require('shelljs')
 var KubeClient = require('kube-stream')
-
-var settings = require('../config/main.js')
 var format = require('string-format')
 format.extend(String.prototype)
+
+var startWithPM2 = require('binder-utils').startWithPM2
+
+var settings = require('../lib/settings.js')
 
 var server = null
 var cluster = true
@@ -13,10 +15,14 @@ function checkCluster () {
   console.log('Checking for cluster presence...')
   var client = new KubeClient()
   var port = settings.kube.proxyPort
-  server = new (forever.Monitor)(['kubectl.sh', 'proxy', '--port={0}'.format(port)], {
-    max: 3
-  })
-  server.start()
+  var app = {
+    name: 'binder-kubernetes-proxy',
+    script: shell.which('kubectl.sh'),
+    args: ['proxy', '--port={0}'.format(port)],
+    exec_interpreter: 'none',
+    silent: true
+  }
+  startWithPM2(app)
   setTimeout(function () {
     client.pods.get(function (err, pods) {
       if (err) {

@@ -12,6 +12,7 @@ var RegistryClient = require('../lib/registry.js')
 var proxyClient = require('../lib/proxy.js').getInstance
 var ProxyClient = require('../lib/proxy.js').ProxyClient
 var DeployServer = require('../lib/server.js')
+var settings = require('../lib/settings.js')
 
 var clusterAvailable = require('./1-main.js').clusterAvailable
 
@@ -65,7 +66,7 @@ describe.skip('Proxy', function () {
   })
 
   describe('(remote)', function () {
-    proxyClient = proxyClient()
+    proxyClient = proxyClient(settings)
 
     var tests = {
       'should create the proxy pods/services': function (done) {
@@ -127,7 +128,7 @@ describe.skip('Proxy', function () {
         })
       },
       'should restore itself from the cluster state': function (done) {
-        var proxyClient = new ProxyClient()
+        var proxyClient = new ProxyClient(settings)
         proxyClient.registerProxyRoute('/user/blah', '9.9.9.9', function (err) {
           if (err) throw err
           proxyClient.getRoutes({ age: 10 }, function (err, routes) {

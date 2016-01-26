@@ -1,38 +1,43 @@
 {
   "name": "binder-deploy-kubernetes",
-  "version": "0.0.0",
-  "description": "Deploys Binder templates on a Kubernetes cluster according to the binder-deploy interface",
-  "main": "lib/server.js",
+  "version": "0.0.1",
+  "description": "A Binder backend that deploys apps onto a Kubernetes cluster",
+  "main": "index.js",
   "scripts": {
-    "test": "mocha --delay",
-    "start": "nodejs start.js"
+    "test": "mocha --delay test/",
+    "start": "node start.js"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/binder-project/binder-deploy-kubernetes.git"
+    "url": "https://github.com/binder-project/binder-deploy-kubernetes"
   },
-  "author": "Andrew Osheroff",
-  "license": "Apache 2.0",
+  "keywords": [
+    "binder",
+    "module",
+    "binder-deploy-kubernetes"
+  ],
+  "author": "Andrew Osheroff <andrewosh@gmail.com> (andrewosh.github.io)",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/binder-project/binder-deploy-kubernetes/issues"
   },
+  "homepage": "https://github.com/binder-project/binder-deploy-kubernetes",
   "dependencies": {
     "async": "^1.5.0",
-    "babel": "^6.1.18",
-    "body-parser": "^1.14.1",
+    "binder-db": "^0.0.1",
+    "binder-logging": "^0.0.1",
+    "binder-module": "^0.0.1",
+    "binder-utils": "^0.0.1",
+    "commander": "^2.9.0",
     "express": "~4.13.3",
-    "forever-monitor": "~1.7.0",
     "hat": "0.0.3",
-    "lodash": "^3.10.1",
-    "mocha": "^2.3.4",
-    "mockery": "^1.4.0",
-    "mongodb": "^2.0.47",
-    "mongoose": "^4.2.6",
+    "inherits": "^2.0.1",
+    "lodash": "^4.0.1",
     "node-kubernetes-client": "^0.2.3",
     "request": "~2.65.0",
+    "shelljs": "^0.5.3",
     "string-format": "~0.5.0",
     "url-join": "0.0.1",
-    "wait.for": "^0.6.6",
-    "winston": "~1.1.1"
+    "wait.for": "^0.6.6"
   }
 }
