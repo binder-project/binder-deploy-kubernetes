@@ -36,7 +36,7 @@ var proxy
 
 // Implementation Tests
 
-describe.skip('Proxy', function () {
+describe('Proxy', function () {
 
   /**
    * Remove the old testing namespace and create a new one (if a cluster is available)
@@ -154,7 +154,7 @@ describe.skip('Proxy', function () {
   })
 })
 
-describe.skip('App', function () {
+describe('App', function () {
   var registry = null
 
   before(function (done) {
