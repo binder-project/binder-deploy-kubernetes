@@ -13,22 +13,26 @@ var proxyClient = require('../lib/proxy.js').getInstance
 var ProxyClient = require('../lib/proxy.js').ProxyClient
 var DeployServer = require('../lib/server.js')
 var settings = require('../lib/settings.js')
+var getDatabase = require('binder-db').getDatabase
 
 var clusterAvailable = require('./1-main.js').clusterAvailable
 
 var namespace = 'binder-testing'
 
 var makeRemote = function (tests) {
-   before(function () {
-     if (!clusterAvailable()) {
-       console.log('WARNING: skipping proxy test because cluster is unavailable')
-       this.skip()
-     }
-   })
-   _.map(_.keys(tests), function (name) {
-     it(name, tests[name])
-   })
+  before(function () {
+    if (!clusterAvailable()) {
+      console.log('WARNING: skipping proxy test because cluster is unavailable')
+      this.skip()
+    }
+  })
+  _.map(_.keys(tests), function (name) {
+   it(name, tests[name])
+  })
 }
+
+// the proxy client can be shared across test suite
+var proxy
 
 // Implementation Tests
 
@@ -37,24 +41,25 @@ describe.skip('Proxy', function () {
   /**
    * Remove the old testing namespace and create a new one (if a cluster is available)
    */
-  before(function initialize(done) {
+  before(function initialize (done) {
     this.timeout(10000)
     if (clusterAvailable()) {
       var client = new KubeClient()
       var nsTemplate = utils.makeNamespace(namespace)
       console.log('About to delete old testing namespace, if it exists')
-      client.namespaces.changeState({
+      client.namespaces.when({
         state: nsTemplate,
         condition: function (namespaces) {
-          return (namespaces.length === 0) 
+          var nss = _.filter(namespaces, nsTemplate)
+          return nss.length === 0
         },
         action: client.namespaces.delete
       }, function (err, ns) {
+        if (err) console.error('WARNING: Could not delete binder-testing namespace -- continuing')
         console.log('About to create testing namespace')
-        if (err) console.log('WARNING: Could not delete binder-testing namespace -- continuing')
         client.namespaces.changeState({
           state: nsTemplate,
-          delta: { status: { phase: 'Active' }},
+          delta: { status: { phase: 'Active' } },
           action: client.namespaces.create
         }, function (err, ns) {
           if (err) throw err
@@ -66,40 +71,42 @@ describe.skip('Proxy', function () {
   })
 
   describe('(remote)', function () {
-    proxyClient = proxyClient(settings)
-
     var tests = {
+      'should be initialized correctly': function (done) {
+        proxy = proxyClient(settings)
+        done()
+      },
       'should create the proxy pods/services': function (done) {
         // give the proxy six minutes to start up
         this.timeout(360000)
-        proxyClient.launchClusterProxy(function (err) {
+        proxy.launchClusterProxy(function (err) {
           if (err) throw err
           done()
         })
       },
       'should have the proxy IPs after proxy creation': function (done) {
-        assert.notEqual(proxyClient.lookupIP, null)
-        assert.notEqual(proxyClient.registerIP, null)
+        assert.notEqual(proxy.lookupIP, null)
+        assert.notEqual(proxy.registerIP, null)
         done()
       },
       'should be able to register routes': function (done) {
-        proxyClient.registerProxyRoute('/user/blah', '9.9.9.9', function (err) {
+        proxy.registerProxyRoute('/user/blah', '9.9.9.9', function (err) {
           if (err) throw err
           done()
         })
       },
       'should be able to get all routes': function (done) {
-        proxyClient.getRoutes(function (err, routes) {
+        proxy.getRoutes(function (err, routes) {
           if (err) throw err
           assert.equal(routes['/user/blah'].target, '9.9.9.9')
           done()
         })
       }, 
       'should be able to get inactive routes': function (done) {
-        proxyClient.getRoutes({ age: 10 }, function (err, routes) {
+        proxy.getRoutes({ age: 10 }, function (err, routes) {
           if (err) throw err
           assert.equal(routes['/user/blah'], null)
-          proxyClient.getRoutes({ age: 0.0001 }, function (err, routes) {
+          proxy.getRoutes({ age: 0.0001 }, function (err, routes) {
             if (err) throw err
             assert.equal(routes['/user/blah'].target, '9.9.9.9')
             done()
@@ -107,19 +114,19 @@ describe.skip('Proxy', function () {
         })
       },
       'should be able to remove routes': function (done) {
-        proxyClient.getRoutes(function (err, routes) {
+        proxy.getRoutes(function (err, routes) {
           if (err) throw err
           assert.notEqual(routes.length, 0)
           var routeKeys = _.keys(routes)
           assert.equal(routeKeys.length, 1)
           async.each(routeKeys, function (route, next) {
-            proxyClient.removeProxyRoute(route, function (err) {
+            proxy.removeProxyRoute(route, function (err) {
               if (err) throw err
               next(null)
             })
-          }, function (err) { 
+          }, function (err) {
             if (err) throw err
-            proxyClient.getRoutes(function (err, routes) {
+            proxy.getRoutes(function (err, routes) {
               if (err) throw err
               assert.deepEqual(routes, {})
               done()
@@ -128,13 +135,13 @@ describe.skip('Proxy', function () {
         })
       },
       'should restore itself from the cluster state': function (done) {
-        var proxyClient = new ProxyClient(settings)
-        proxyClient.registerProxyRoute('/user/blah', '9.9.9.9', function (err) {
+        var proxy = new ProxyClient(settings)
+        proxy.registerProxyRoute('/user/blah', '9.9.9.9', function (err) {
           if (err) throw err
-          proxyClient.getRoutes({ age: 10 }, function (err, routes) {
+          proxy.getRoutes({ age: 10 }, function (err, routes) {
             if (err) throw err
             assert.equal(routes['/user/blah'], null)
-            proxyClient.getRoutes({ age: 0 }, function (err, routes) {
+            proxy.getRoutes({ age: 0 }, function (err, routes) {
               if (err) throw err
               assert.equal(routes['/user/blah'].target, '9.9.9.9')
               done()
@@ -147,13 +154,20 @@ describe.skip('Proxy', function () {
   })
 })
 
-describe('App', function () {
-
+describe.skip('App', function () {
   var registry = null
 
-  before(function () {
+  before(function (done) {
     registry = new RegistryClient({
-      templateDir: './examples/'
+      registry: {},
+      test: {
+        testing: true,
+        templateDir: './examples/'
+      }
+    })
+    getDatabase(function (err, db) {
+      App.initialize(db)
+      done()
     })
   })
 
@@ -187,14 +201,14 @@ describe('App', function () {
       kubeClient = new KubeClient()
     })
 
-    describe('standalone', function () { 
+    describe('standalone', function () {
       var tests = {
         'should correctly create pods/services': function (done) {
           this.timeout(50000000)
           registry.fetchTemplate(name, function (err, template) {
             if (err) throw err
             app = new App(template)
-            app.create(function (err) {
+            app.save(function (err) {
               if (err) throw err
               async.retry({ times: 20, interval: 5000 }, function (next) {
                 if (app.state === 'deployed') {
@@ -220,7 +234,8 @@ describe('App', function () {
 
         'should be accessible through the proxy after route creation': function (done) {
           this.timeout(60000)
-          var url = urljoin('http://' + proxyClient.lookupIP, location)
+          var url = urljoin('http://' + proxy.lookupIP, location)
+          console.log('url: ' + url)
           request(url, function (err, rsp) {
             if (err) throw err
             assert.notEqual(rsp.statusCode, null)
@@ -231,8 +246,9 @@ describe('App', function () {
         },
 
         'should do the correct cleanup once deleted': function (done) {
+          this.skip()
           this.timeout(60000)
-          app.delete(function (err) {
+          app.remove(function (err) {
             if (err) throw err
             // ensure the pod has been deleted
             kubeClient.pods.get({
@@ -240,7 +256,7 @@ describe('App', function () {
             }, function (err, pods) {
               if (err) throw err
               assert.equal(pods.length, 0)
-              proxyClient.getRoutes(function (err, routes) {
+              proxy.getRoutes(function (err, routes) {
                 if (err) throw err
                 // ensure the proxy route has been removed
                 assert.deepEqual(_.keys(routes), ['/user/blah'])
@@ -249,66 +265,6 @@ describe('App', function () {
             })
           })
         }
-      }
-      makeRemote(tests)
-    })
-
-    describe('through collection', function () {
-      var apps = require('../lib/state/app.js').apps
-      var app = null
-
-      var tests = {
-        'adding to collection should create on cluster': function (done) {
-          this.timeout(60000)
-          registry.fetchTemplate(name, function (err, template) {
-            if (err) throw err
-            app = new App(template)
-            apps.insert(app, function (err) {
-              if (err) throw err
-              assert.equal(apps.length(), 1)
-              var template = { 'imageName': 'binder-project-example-requirements' } 
-              apps.findOne(template, function (err, one) {
-                if (err) throw err
-                assert(one)
-                assert.equal(one.imageName, 'binder-project-example-requirements')
-                // ensure that the app is eventually running on the cluster
-                async.retry({times: 10, interval: 2000}, function (next) { 
-                  kubeClient.pods.get({
-                    template: { metadata: { namespace: app.id }}
-                  }, function (err, pods) {
-                    if (pods.length === 1) {
-                      var pod = pods[0]
-                      if (_.get(pod, 'status.phase') === 'Running') { 
-                        return next(null)
-                      }
-                      return next('pod not yet running. retrying...')
-                    } else {
-                      return next('pod not yet created. retrying...')
-                    }
-                  })
-                }, function (err) {
-                  if (err) throw err
-                  done()
-                })
-              })
-            })
-          })
-        }, 
-        'removing from collection should remove from cluster': function (done) {
-          this.timeout(60000)
-          var template = { metadata: { namespace: app.id }}
-          apps.remove(template, function (err) {
-            if (err) throw err
-              // ensure that the app is no longer on the cluster
-            kubeClient.pods.get({
-              template: template
-            }, function (err, pods) {
-              if (err) throw err
-              assert(pods.length, 0)
-              done()
-            })
-          })
-        },
       }
       makeRemote(tests)
     })
@@ -327,7 +283,11 @@ describe.skip('Pool', function () {
 
   before(function () {
     registry = new RegistryClient({
-      templateDir: './examples/'
+      registry: {},
+      test: {
+        testing: true,
+        templateDir: './examples/'
+      }
     })
     kube = new KubeClient()
   })
@@ -405,7 +365,7 @@ describe.skip('Pools', function () {
   makeRemote(tests)
 })
 
-describe('Cluster', function () {
+describe.skip('Cluster', function () {
 
   var deployServer = null
   var baseUrl = null
@@ -415,7 +375,7 @@ describe('Cluster', function () {
   var id = null
 
   before(function () {
-    deployServer = new DeployServer() 
+    deployServer = new DeployServer()
     baseUrl = 'http://localhost:' + deployServer.port
     apiKey = deployServer.apiKey
     deployServer.start()

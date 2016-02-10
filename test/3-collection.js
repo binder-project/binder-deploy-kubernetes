@@ -1,245 +1,172 @@
+var util = require('util')
+
 var _ = require('lodash')
 var async = require('async')
 var assert = require('assert')
 
 var testUtil = require('./util.js')
-var Collection = require('../lib/models.js').Collection
+var Model = require('../lib/models.js').Model
+var getDatabase = require('binder-db').getDatabase
 
-describe('Collection', function () {
+describe('Model', function () {
 
-  function good (cb) { cb(null) }
-  function bad (cb) { cb(new Error('bad')) }
-  function GoodModel(obj) {
-    obj = obj || {}
-    return _.extend(obj, {
-      create: good,
-      update: function (update, cb) {
-        _.extend(this, update)
-        cb(null)
-      },
-      delete: good
-    })
+  function GoodModel (template) {
+    Model.call(this, template)
   }
-  function alwaysBad (cb){ cb(new Error('always bad')) }
-  function BadModel(obj) {
-    obj = obj || {}
-    return _.extend(obj, {
-      create: bad,
-      update: function (update, cb) {
-        cb(new Error('always bad'))
-      },
-      delete: bad
-    })
+  util.inherits(GoodModel, Model)
+  _.assignIn(GoodModel, Model)
+
+  GoodModel.schema = {
+    id: { type: String, unique: true },
+    name: String
+  }
+  GoodModel.prototype._serialize = function () {
+    return {
+      id: this.id,
+      name: this.name
+    }
   }
 
-  describe('initialization', function () {
-    it('should handle initialization with an Array', function () {
-      var array = _.map(_.range(10), function (item) {
-        return GoodModel()
-      })
-      var coll = new Collection({
-        collection: array
-      })
-      assert.equal(coll.coll.length, 10)
-      assert.equal(coll.length(), 10)
+  function BadModel (template) {
+    Model.call(this, template)
+  }
+  util.inherits(BadModel, Model)
+  _.assignIn(BadModel, Model)
+
+  BadModel.schema = {
+    id: { type: String, unique: true },
+    name: String
+  }
+  BadModel.prototype._serialize = function () {
+    return {
+      id: this.id,
+      name: this.name
+    }
+  }
+
+  BadModel.prototype._create = function (cb) {
+    return cb(new Error('bad model is bad!'))
+  }
+  BadModel.prototype._delete = function (cb) {
+    return cb(new Error('bad model is bad!'))
+  }
+  BadModel.prototype._update = function (template, cb) {
+    return cb(new Error('bad model is bad!'))
+  }
+
+  var flushCollection = function (coll, cb) {
+    coll.remove({}, { force: true }, function (err) {
+      return cb(err)
     })
-    it('should handle empty initialization', function () {
-      var coll = new Collection()
-      assert.equal(coll.coll.length, 0)
-      assert.equal(coll.length(), 0)
+  }
+
+  before(function (done) {
+    getDatabase(function (err, db) {
+      if (err) throw err
+      GoodModel.initialize(db)
+      BadModel.initialize(db)
+      async.parallel([
+        _.partial(flushCollection, GoodModel),
+        _.partial(flushCollection, BadModel)
+      ], function (err) {
+        if (err) throw err
+        done()
+      })
     })
   })
 
-  describe('manipulation', function () {
-    var collection = new Collection()
-
-    describe('insertion', function () {
-
-      it('should insert regardless of creation success', function (done) {
-        this.timeout(50000)
-        var model = GoodModel()
-        collection.insert(model, function (err) {
+  describe('insertion', function () {
+    it('should insert if creation succeeds', function (done) {
+      var model = new GoodModel()
+      model.save(function (err) {
+        if (err) throw err
+        GoodModel.count(function (err, length) {
           if (err) throw err
-          assert.equal(collection.length(), 1)
-          done()
-        })
-      })
-
-      it('should insert then remove if creation fails', function (done) {
-        this.timeout(50000)
-        var model = BadModel()
-        collection.insert(model, function (err) {
-          if (err) throw err
-          async.retry({times: 3, interval: 1000}, function (next) {
-            if (collection.length() !== 1) {
-              console.log('retrying...')
-              return next('collection has not removed BadModel yet')
-            }
-            return next(null)
-          }, function (err) {
-            if (err) throw err
-            assert.equal(collection.length(), 1)
-            done()
-          })
-        })
-      })
-
-      it('should insert if model does not require creation', function (done) {
-        var model = {a: 1}
-        collection.insert(model, function (err) {
-          if (err) throw err
-          assert.equal(collection.length(), 2)
-          done()
-        })
-      })
-
-    })
-
-    describe('deletion', function () {
-
-      before(function () {
-        var l = [GoodModel(), GoodModel({a: 1}), BadModel({b: 1}), {c: 1}]
-        collection = new Collection({
-          collection: l
-        })
-      })
-
-      it('should delete if deletion succeeds', function (done) {
-        var template = {a: 1}
-        assert.equal(collection.length(), 4)
-        collection.remove(template, function (err) {
-          if (err) throw err
-          assert.equal(collection.length(), 3)
-          done()
-        })
-      })
-
-      it('should not delete if deletion fails', function (done) {
-        var template = {b: 1} 
-        assert.equal(collection.length(), 3)
-        collection.remove(template, function (err) {
-          assert(err)
-          assert.equal(collection.length(), 3)
-          done()
-        })
-      })
-
-      it('should not delete if object does not require deletion', function (done) {
-        var template = {c: 1}
-        assert.equal(collection.length(), 3)
-        collection.remove(template, function (err) {
-          if (err) throw err
-          // ensure that ALL matching objects were removed
-          assert.equal(collection.length(), 2)
-          done()
-        })
-      })
-
-    })
-
-    describe('querying', function () {
-
-      before(function () {
-        var l = [{}, {a: 1, b: 2}, GoodModel({b: 2}), BadModel({b: 2}), GoodModel({a: 1})]
-        collection = new Collection({
-          collection: l
-        })
-      })
-
-      it('should find all items with an empty template', function (done) {
-        var template = {}
-        assert.equal(collection.length(), 5)
-        collection.find(template, function (err, items) {
-          if (err) throw err
-          assert.deepEqual(items, collection.coll)
-          done()
-        })
-      })
-
-      it('should find full items with partial templates', function (done) {
-        var template = {a: 1}
-        collection.find(template, function (err, items) {
-          if (err) throw err
-          assert.equal(items.length, 2)
-          done()
-        })
-      })
-
-      it('should return a single item for findOne', function (done) {
-        var template = {a: 1}
-        collection.findOne(template, function (err, items) {
-          if (err) throw err
-          assert(!(items instanceof Array))
-          assert.deepEqual(items, {a: 1, b: 2})
+          assert.equal(length, 1)
           done()
         })
       })
     })
 
-    describe('updating', function () {
-
-      before(function () {
-        var l = [GoodModel(), GoodModel({a: 1}), BadModel({b: 1}), {c: 1}]
-        collection = new Collection({
-          collection: l
-        })
-      })
-
-      it('should update if model updating succeeds', function (done) {
-        var template = {a: 1}
-        var update = {a: 4}
-        collection.findOne(template, function (err, item) {
+    it('should not insert if creation fails', function (done) {
+      var model = new BadModel()
+      model.save(function (err) {
+        assert(err)
+        BadModel.count(function (err, length) {
           if (err) throw err
-          assert(testUtil.isEqual(item, GoodModel({a: 1})))
-          collection.update(template, update, function (err) {
-            if (err) throw err
-            collection.findOne(update, function (err, item) {
-              if (err) throw err
-              assert(testUtil.isEqual(item, GoodModel({a: 4})))
-              done()
-            })
-          })
+          assert.equal(length, 0)
+          done()
         })
       })
+    })
+  })
 
-      it('should not update if model updating fails', function (done) {
-        var template = {b: 1}
-        var update = {b: 4}
-        collection.findOne(template, function (err, item) {
-          if (err) throw err
-          assert(testUtil.isEqual(item, BadModel({b: 1})))
-          collection.update(template, update, function (err) {
-            assert(err)
-            collection.findOne(template, function (err, item) {
-              if (err) throw err
-              assert(testUtil.isEqual(item, BadModel({b: 1})))
-              done()
-            })
-          })
+  describe('deletion', function () {
+    before(function (done) {
+      // BadModel._create will become good for now
+      BadModel.prototype._create = function (cb) { return cb(null) }
+      async.each(_.range(5), function (i, next) {
+        var good = new GoodModel({ name: String(i) })
+        var bad = new BadModel({ name: String(i) })
+        async.series([
+          good.save.bind(good),
+          bad.save.bind(bad)
+        ], function (err) {
+          return next(err)
         })
+      }, function (err) {
+        if (err) throw err
+        done()
       })
-
-      it('should update if model does not require updating', function (done) {
-        var template = {c: 1}
-        var update = {c: 4}
-        collection.findOne(template, function (err, item) {
-          if (err) throw err
-          assert(testUtil.isEqual(item, {c: 1}))
-          collection.update(template, update, function (err) {
-            if (err) throw err
-            collection.findOne(update, function (err, item) {
-              if (err) throw err
-              assert(testUtil.isEqual(item, {c: 4}))
-              done()
-            })
-          })
-        })
-      })
-
     })
 
+    it('should delete if deletion succeeds', function (done) {
+      GoodModel.remove({ name: '0' }, function (err) {
+        if (err) throw err
+        GoodModel.count(function (err, length) {
+          if (err) throw err
+          assert.equal(length, 5)
+          done()
+        })
+      })
+    })
 
-    it('should return an empty list if models matching a template are not found')
+    it('should not delete if deletion fails', function (done) {
+      BadModel.remove({ name: '0' }, function (err) {
+        assert(err)
+        BadModel.count(function (err, length) {
+          if (err) throw err
+          assert.equal(length, 5)
+          done()
+        })
+      })
+    })
+  })
 
+  describe('querying', function () {
+
+    it('should find all items with an empty template', function (done) {
+      BadModel.find({}, function (err, models) {
+        if (err) throw err
+        assert.equal(models.length, 5)
+        done()
+      })
+    })
+
+    it('should find all items matching a template', function (done) {
+      BadModel.find({ name: '1' }, function (err, models) {
+        if (err) throw err
+        assert.equal(models.length, 1)
+        done()
+      })
+    })
+
+    it('should return a single item for findOne', function (done) {
+      BadModel.findOne({ name: '1' }, function (err, model) {
+        if (err) throw err
+        assert.equal(model.name, '1')
+        done()
+      })
+    })
   })
 })

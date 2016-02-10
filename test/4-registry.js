@@ -11,7 +11,11 @@ describe('Registry', function () {
 
       beforeEach(function () {
         registry = new RegistryClient({
-          templateDir: 'examples/'
+          registry: {},
+          test: {
+            testing: true,
+            templateDir: 'examples/'
+          }
         })
       })
 
@@ -38,7 +42,11 @@ describe('Registry', function () {
 
       beforeEach(function () {
         registry = new RegistryClient({
-          templateDir: './baddirectory'
+          registry: {},
+          test: {
+            testing: true,
+            templateDir: './baddirectory'
+          }
         })
       })
       

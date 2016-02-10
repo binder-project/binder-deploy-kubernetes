@@ -1,8 +1,10 @@
 {
   "name": "binder-deploy-kubernetes",
+  "port": 8084,
   "kube": {
+    "provider": "vagrant",
     "proxyHost": "localhost",
-    "proxyPort": 8083,
+    "proxyPort": 8085,
     "apiVersion": "v1"
   },
   "pool": {
@@ -11,10 +13,10 @@
   },
   "registry": {
     "host": "localhost",
-    "port": 8084
+    "port": 8083
   },
   "test": {
     "templateDir": "examples/",
-    "testing": false
+    "testing": true
   }
 }
