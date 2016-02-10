@@ -7,7 +7,7 @@ var KubeClient = require('kube-stream')
 var utils = require('kube-test-utils')
 
 var Pool = require('../lib/state/pool.js').Pool
-var App = require('../lib/state/app.js').App
+var App = require('../lib/state/app.js')
 var RegistryClient = require('../lib/registry.js')
 var proxyClient = require('../lib/proxy.js').getInstance
 var ProxyClient = require('../lib/proxy.js').ProxyClient
@@ -36,7 +36,7 @@ var proxy
 
 // Implementation Tests
 
-describe('Proxy', function () {
+describe.skip('Proxy', function () {
 
   /**
    * Remove the old testing namespace and create a new one (if a cluster is available)
@@ -154,7 +154,7 @@ describe('Proxy', function () {
   })
 })
 
-describe('App', function () {
+describe.skip('App', function () {
   var registry = null
 
   before(function (done) {
@@ -365,7 +365,7 @@ describe.skip('Pools', function () {
   makeRemote(tests)
 })
 
-describe.skip('Cluster', function () {
+describe('Cluster', function () {
 
   var deployServer = null
   var baseUrl = null
@@ -374,10 +374,13 @@ describe.skip('Cluster', function () {
   // used during testing
   var id = null
 
-  before(function () {
+  before(function (done) {
     deployServer = new DeployServer()
-    baseUrl = 'http://localhost:' + deployServer.port
-    apiKey = deployServer.apiKey
+    deployServer.on('start', function () {
+      apiKey = deployServer.apiKey
+      baseUrl = 'http://localhost:' + deployServer.port
+      done()
+    })
     deployServer.start()
   })
 
@@ -435,19 +438,18 @@ describe.skip('Cluster', function () {
         assert.notEqual(rsp.statusCode, 500)
         done()
       })
-    }, 
+    },
 
     'should not get all applications if not authorized': function (done) {
       var opts = {
-        url: urljoin(baseUrl, 'applications/'),
+        url: urljoin(baseUrl, 'applications/')
       }
       request(opts, function (err, rsp) {
         if (err) throw err
         assert.equal(rsp.statusCode, 403)
         done()
       })
-    }, 
-
+    },
 
     'should get individual applications': function (done) {
       var opts = {
@@ -477,7 +479,7 @@ describe.skip('Cluster', function () {
           assert.notEqual(rsp.statusCode, 404)
           assert.notEqual(rsp.statusCode, 500)
           console.log('body: ' + JSON.stringify(body))
-          if (body.location && (body.status === 'deployed')) { 
+          if (body.location && (body.status === 'deployed')) {
             console.log('finished...')
             return next(null)
           } else {
