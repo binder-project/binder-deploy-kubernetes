@@ -36,7 +36,7 @@ var proxy
 
 // Implementation Tests
 
-describe.skip('Proxy', function () {
+describe('Proxy', function () {
 
   /**
    * Remove the old testing namespace and create a new one (if a cluster is available)
@@ -106,7 +106,7 @@ describe.skip('Proxy', function () {
         proxy.getRoutes({ age: 10 }, function (err, routes) {
           if (err) throw err
           assert.equal(routes['/user/blah'], null)
-          proxy.getRoutes({ age: 0.0001 }, function (err, routes) {
+          proxy.getRoutes({ age: 0.00000001 }, function (err, routes) {
             if (err) throw err
             assert.equal(routes['/user/blah'].target, '9.9.9.9')
             done()
@@ -154,7 +154,7 @@ describe.skip('Proxy', function () {
   })
 })
 
-describe.skip('App', function () {
+describe('App', function () {
   var registry = null
 
   before(function (done) {

@@ -1,7 +1,7 @@
 {
   "name": "binder-project-example-requirements",
-  "image-name": "binder-project-example-requirements",
-  "image-source": "binder-project-example-requirements",
+  "image-name": "andrewosh-binder-project-example-requirements",
+  "image-source": "andrewosh/binder-project-example-requirements",
   "services":[],
   "time-created": "2015-10-04T22:20:25.953360391Z",
   "time-modified": "2015-10-04T22:20:25.953360391Z"

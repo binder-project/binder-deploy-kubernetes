@@ -2,7 +2,7 @@
   "name": "binder-deploy-kubernetes",
   "port": 8084,
   "kube": {
-    "provider": "vagrant",
+    "provider": "gce",
     "proxyHost": "localhost",
     "proxyPort": 8085,
     "apiVersion": "v1"
