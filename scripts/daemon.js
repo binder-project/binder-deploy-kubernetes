@@ -12,8 +12,8 @@ var proxyClient = require('../lib/proxy').getInstance
 
 var logger = getLogger('binder-kubernetes-daemon')
 
-var age = 60
-var period = 5 * 60 * 1000
+var age = 1
+var period = 1 * 60 * 1000
 
 // TODO: rewrite the whole API using futures...
 setInterval(function () {
