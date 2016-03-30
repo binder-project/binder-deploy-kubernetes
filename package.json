@@ -1,6 +1,6 @@
 {
   "name": "binder-deploy-kubernetes",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A Binder backend that deploys apps onto a Kubernetes cluster",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "module",
     "binder-deploy-kubernetes"
   ],
-  "author": "Andrew Osheroff <andrewosh@gmail.com> (andrewosh.github.io)",
+  "author": "Andrew Osheroff <andrewosh@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/binder-project/binder-deploy-kubernetes/issues"
