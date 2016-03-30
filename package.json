@@ -1,6 +1,6 @@
 {
   "name": "binder-deploy-kubernetes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Binder backend that deploys apps onto a Kubernetes cluster",
   "main": "index.js",
   "scripts": {
@@ -24,10 +24,10 @@
   "homepage": "https://github.com/binder-project/binder-deploy-kubernetes",
   "dependencies": {
     "async": "^1.5.0",
-    "binder-db": "^0.0.1",
-    "binder-logging": "^0.0.1",
-    "binder-module": "^0.0.1",
-    "binder-utils": "^0.0.1",
+    "binder-db": "^1.0.0",
+    "binder-logging": "^1.0.0",
+    "binder-module": "^1.0.0",
+    "binder-utils": "^1.0.0",
     "commander": "^2.9.0",
     "express": "~4.13.3",
     "hat": "0.0.3",
