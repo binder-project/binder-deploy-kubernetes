@@ -1,10 +1,20 @@
 {
-  "name": "binder-deploy-kubernetes",
-  "port": 8084,
+  "db": {
+    "host": "localhost",
+    "port": 9050
+  },
+
+  "logging": {
+    "host": "localhost",
+    "logstash": {
+      "port": 8050
+    }
+  },
+
   "kube": {
     "provider": "gce",
-    "proxyHost": "localhost",
-    "proxyPort": 8085,
+    "host": "localhost",
+    "port": 8085,
     "apiVersion": "v1"
   },
   "pool": {
@@ -17,6 +27,8 @@
   },
   "test": {
     "templateDir": "examples/",
-    "testing": true
-  }
+    "testing": false
+  },
+
+  "port": 8084
 }

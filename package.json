@@ -1,11 +1,12 @@
 {
   "name": "binder-deploy-kubernetes",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A Binder backend that deploys apps onto a Kubernetes cluster",
   "main": "index.js",
   "scripts": {
     "test": "mocha --delay test/",
-    "start": "node start.js start"
+    "start": "node start.js start",
+    "postinstall": "node scripts/postinstall.js"
   },
   "repository": {
     "type": "git",

@@ -1,19 +1,19 @@
 var wait = require('wait.for')
 var shell = require('shelljs')
-var KubeClient = require('kube-stream')
 var format = require('string-format')
 format.extend(String.prototype)
 
 var startWithPM2 = require('binder-utils').startWithPM2
 
-var settings = require('../lib/settings.js')
+var kubeClient = require('../lib/client')
+var settings = require('../lib/settings')
 
 var server = null
 var cluster = true
 
 function checkCluster () {
   console.log('Checking for cluster presence...')
-  var client = new KubeClient()
+  var client = kubeClient()
   var port = settings.kube.proxyPort
   var app = {
     name: 'binder-kubernetes-proxy',

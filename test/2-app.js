@@ -3,19 +3,20 @@ var async = require('async')
 var assert = require('assert')
 var request = require('request')
 var urljoin = require('url-join')
-var KubeClient = require('kube-stream')
 var utils = require('kube-test-utils')
 
-var Pool = require('../lib/state/pool.js').Pool
-var App = require('../lib/state/app.js')
-var RegistryClient = require('../lib/registry.js')
-var proxyClient = require('../lib/proxy.js').getInstance
-var ProxyClient = require('../lib/proxy.js').ProxyClient
-var DeployServer = require('../lib/server.js')
-var settings = require('../lib/settings.js')
+
+var kubeClient = require('../lib/client')
+var Pool = require('../lib/state/pool').Pool
+var App = require('../lib/state/app')
+var RegistryClient = require('../lib/registry')
+var proxyClient = require('../lib/proxy').getInstance
+var ProxyClient = require('../lib/proxy').ProxyClient
+var DeployServer = require('../lib/server')
+var settings = require('../lib/settings')
 var getDatabase = require('binder-db').getDatabase
 
-var clusterAvailable = require('./1-main.js').clusterAvailable
+var clusterAvailable = require('./1-main').clusterAvailable
 
 var namespace = 'binder-testing'
 
@@ -44,7 +45,7 @@ describe('Proxy', function () {
   before(function initialize (done) {
     this.timeout(10000)
     if (clusterAvailable()) {
-      var client = new KubeClient()
+      var client = kubeClient()
       var nsTemplate = utils.makeNamespace(namespace)
       console.log('About to delete old testing namespace, if it exists')
       client.namespaces.when({
@@ -198,7 +199,7 @@ describe('App', function () {
     var location = null
 
     before(function () {
-      kubeClient = new KubeClient()
+      kubeClient = kubeClient()
     })
 
     describe('standalone', function () {
@@ -289,7 +290,7 @@ describe.skip('Pool', function () {
         templateDir: './examples/'
       }
     })
-    kube = new KubeClient()
+    kube = kubeClient()
   })
 
   describe('standalone', function () {
