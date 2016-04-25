@@ -23,7 +23,7 @@
   },
   "registry": {
     "host": "localhost",
-    "port": 8083
+    "port": 8082
   },
   "test": {
     "templateDir": "examples/",
