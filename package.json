@@ -1,6 +1,6 @@
 {
   "name": "binder-deploy-kubernetes",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A Binder backend that deploys apps onto a Kubernetes cluster",
   "main": "index.js",
   "scripts": {

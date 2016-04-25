@@ -192,14 +192,14 @@ describe('App', function () {
 
   describe('(remote)', function () {
     var name = 'binder-project-example-requirements'
-    var kubeClient = null
+    var client = null
 
     // set during testing
     var app = null
     var location = null
 
     before(function () {
-      kubeClient = kubeClient()
+      client = kubeClient()
     })
 
     describe('standalone', function () {
@@ -252,7 +252,7 @@ describe('App', function () {
           app.remove(function (err) {
             if (err) throw err
             // ensure the pod has been deleted
-            kubeClient.pods.get({
+            client.pods.get({
               template: app._frontendPod()
             }, function (err, pods) {
               if (err) throw err
