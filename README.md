@@ -1,7 +1,7 @@
 # binder-deploy-kubernetes
 A binder-deploy implementation that launches containers on a Kubernetes cluster
 
-The [`deploy API`](https://github.com/binder-project/binder-protocol/blob/master/index.js#L262)
+The [`deploy`](https://github.com/binder-project/binder-protocol/blob/master/index.js#L262) API
 defines how Binder
 [templates](https://github.com/binder-project/binder-build#constructing-a-template-from-an-image)
 can be launched on any container management system. In our production environment, all templates
