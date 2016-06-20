@@ -28,27 +28,21 @@ setInterval(function () {
         console.log('found the following routes: ' + JSON.stringify(routes))
         if (err) return logger.error('could not cleanup apps: {0}'.format(err))
         async.eachLimit(apps, 5, function (app, next) {
-          if (app._location() in routes) {
-            console.log('****************')
-            console.log('app is inactive: {0}'.format(JSON.stringify(app.id)))
-            console.log('inactiveTime: {0}, deployTime: {1}, cullTimeout: {2}'.format(app.inactiveTime, app.deployTime, app.cullTimeout))
-            app.inactiveTime += period
-            if (app.deployTime && app.inactiveTime > app.cullTimeout) {
-              logger.info('culling app: {0}'.format(app.id))
-              app._delete(function (err) {
-                return next(err)
-              })
-            } else {
-              console.log('app was inactive, but not removing: {0}'.format(app.id))
-              app._save(function (err) {
-                if (err) return logger.error('could not save updated inactive app: {0}'.format(err))
-                return next(err)
-              })
-            }
+          app.inactiveTime = app.inactiveTime || 0
+          console.log('****************')
+          console.log('app is inactive: {0}'.format(JSON.stringify(app.id)))
+          console.log('inactiveTime: {0}, deployTime: {1}, cullTimeout: {2}'.format(app.inactiveTime, app.deployTime, app.cullTimeout))
+          app.inactiveTime += period
+          if (app.deployTime && app.inactiveTime > app.cullTimeout) {
+            logger.info('culling app: {0}'.format(app.id))
+            app._delete(function (err) {
+              if (err) console.error(err)
+              return next()
+            })
           } else {
-            app.inactiveTime = 0
+            console.log('app was inactive, but not removing: {0}'.format(app.id))
             app._save(function (err) {
-              if (err) return logger.error('could not save updated active app: {0}'.format(err))
+              if (err) return logger.error('could not save updated inactive app: {0}'.format(err))
               return next(err)
             })
           }
