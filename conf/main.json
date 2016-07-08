@@ -29,6 +29,6 @@
     "templateDir": "examples/",
     "testing": false
   },
-
+  "healthInterval": 20000
   "port": 8084
 }
