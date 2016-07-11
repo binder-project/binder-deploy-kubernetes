@@ -29,5 +29,6 @@
     "templateDir": "examples/",
     "testing": false
   },
+  "lookupHost": "",
   "port": 8084
 }
